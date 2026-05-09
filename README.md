@@ -4,10 +4,11 @@
 
 **Code Arena** is a professional cybersecurity toolbox designed for CTF players, red teamers, and security researchers.
 
-It contains **mini codes, exploits, and utilities** that are:
+It contains **mini codes, exploits, payloads, and utilities** that are:
 - Time-saving
 - Dependency-aware (or standalone)
-- Cross-category (Web, OSINT, Crypto, Pwn, Reverse, Forensic, Cheatsheet)
+- Ready to use in CTF and daily security tasks
+- **Open to development** – you can add your own codes
 
 ### Categories
 
@@ -21,16 +22,19 @@ It contains **mini codes, exploits, and utilities** that are:
 
 Every code is **functional, well-structured, and battle-tested**.
 
+> **Open for contributions** – Add your own mini codes, exploits, or payloads. Pull requests welcome.
+
 ---
 
 ## Türkçe
 
 **Code Arena** – CTF oyuncuları, kırmızı takım üyeleri ve güvenlik araştırmacıları için profesyonel bir araç setidir.
 
-İçerdiği **mini kodlar, exploitler ve yardımcı araçlar**:
+İçerdiği **mini kodlar, exploitler, payload'lar ve yardımcı araçlar**:
 - Zaman kazandırır
 - Bağımlılıkları bellidir (veya bağımsızdır)
-- Kategoriler arası çalışır
+- CTF ve günlük güvenlik işlerinde hazır kullanım
+- **Geliştirmeye açıktır** – Kendi kodlarını ekleyebilirsin
 
 ### Kategoriler
 
@@ -44,6 +48,4 @@ Every code is **functional, well-structured, and battle-tested**.
 
 Her kod **işlevsel, iyi yapılandırılmış ve savaşta test edilmiştir**.
 
----
-
-**Geliştirmeye açıktır** – Her kategoriye yeni kodlar eklenebilir, pull request'ler memnuniyetle karşılanır.
+> **Katkıya açık** – Kendi mini kodlarını, exploitlerini veya payload'larını ekleyebilirsin. Pull request'ler memnuniyetle karşılanır.
