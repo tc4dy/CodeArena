@@ -1,0 +1,133 @@
+#define _GNU_SOURCE
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <time.h>
+#include <signal.h>
+#include <errno.h>
+#include <sys/mman.h>
+#include <stdint.h>
+#define BUFFER_SIZE 64
+#define CANARY_SIZE 8
+#define MAX_ATTEMPTS 3
+#define TIMEOUT_SECS 60
+#define SECRET_SIZE 32
+typedef struct {
+uint8_t canary[CANARY_SIZE];
+uint64_t cookie;
+char secret[SECRET_SIZE];
+int attempt;
+int level;
+} ChallengeCtx;
+static ChallengeCtx *ctx = NULL;
+static volatile int alarm_fired = 0;
+static void banner(void) {
+puts("=========================================");
+puts(" Advanced Stack Exploitation Suite ");
+puts(" [CTF Challenge Framework v2.0] ");
+puts("=========================================");
+printf("[] PID: %d\n", getpid());
+printf("[] ASLR: %s\n", access("/proc/sys/kernel/randomize_va_space", R_OK) == 0 ? "active" : "unknown");
+printf("[*] Level: %d / %d\n", ctx->level, MAX_ATTEMPTS);
+puts("=========================================\n");
+}
+static void timeout_handler(int sig) {
+(void)sig;
+alarm_fired = 1;
+write(STDOUT_FILENO, "\n[!] Timeout. Connection closed.\n", 33);
+_exit(1);
+}
+static void setup_signals(void) {
+struct sigaction sa;
+memset(&sa, 0, sizeof(sa));
+sa.sa_handler = timeout_handler;
+sigaction(SIGALRM, &sa, NULL);
+signal(SIGPIPE, SIG_IGN);
+}
+static void init_ctx(void) {
+ctx = mmap(NULL, sizeof(ChallengeCtx), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+if (ctx == MAP_FAILED) { perror("mmap"); exit(1); }
+int fd = open("/dev/urandom", O_RDONLY);
+if (fd < 0) { perror("open /dev/urandom"); exit(1); }
+ssize_t n = read(fd, ctx->canary, CANARY_SIZE);
+if (n != CANARY_SIZE) { perror("read canary"); close(fd); exit(1); }
+n = read(fd, &ctx->cookie, sizeof(ctx->cookie));
+if (n != (ssize_t)sizeof(ctx->cookie)) { perror("read cookie"); close(fd); exit(1); }
+n = read(fd, ctx->secret, SECRET_SIZE);
+if (n != SECRET_SIZE) { perror("read secret"); close(fd); exit(1); }
+close(fd);
+ctx->attempt = 0;
+ctx->level = 1;
+}
+static void cleanup_ctx(void) {
+if (ctx && ctx != MAP_FAILED) {
+memset(ctx, 0, sizeof(ChallengeCtx));
+munmap(ctx, sizeof(ChallengeCtx));
+ctx = NULL;
+}
+}
+attribute((noreturn))
+void win(void) {
+puts("\n[+] Stack canary bypassed successfully!");
+puts("[+] Spawning shell...\n");
+fflush(stdout);
+execl("/bin/sh", "/bin/sh", NULL);
+perror("execl");
+exit(1);
+}
+static void print_leak(const char *tag, const void *ptr, size_t len) {
+printf("[leak] %s => ", tag);
+for (size_t i = 0; i < len; i++) printf("%02x", ((const uint8_t *)ptr)[i]);
+printf(" (addr: %p)\n", ptr);
+}
+static void level_hints(void) {
+switch (ctx->level) {
+case 1: printf("[hint] buffer @ %p size: %d bytes\n", (void *)0xdeadbeef, BUFFER_SIZE); break;
+case 2: printf("[hint] canary ends at offset %d from buffer start\n", BUFFER_SIZE + CANARY_SIZE); break;
+case 3: puts("[hint] you know where everything is. finish it."); break;
+default: break;
+}
+}
+static int vuln(void) {
+char buffer[BUFFER_SIZE];
+uint8_t local_canary[CANARY_SIZE];
+memcpy(local_canary, ctx->canary, CANARY_SIZE);
+setvbuf(stdin, NULL, _IONBF, 0);
+printf("\n[] Attempt %d of %d\n", ctx->attempt + 1, MAX_ATTEMPTS);
+print_leak("canary", local_canary, CANARY_SIZE);
+level_hints();
+printf("[] Enter payload: ");
+fflush(stdout);
+memset(buffer, 0, sizeof(buffer));
+gets(buffer);
+if (memcmp(buffer + BUFFER_SIZE, local_canary, CANARY_SIZE) != 0) {
+puts("[!] Stack smashing detected — canary corrupted.");
+ctx->attempt++;
+if (ctx->attempt >= MAX_ATTEMPTS) { puts("[!] Maximum attempts reached. Goodbye."); return -1; }
+ctx->level++;
+return 0;
+}
+return 1;
+}
+int main(int argc, char **argv, char **envp) {
+(void)argc; (void)argv; (void)envp;
+setvbuf(stdout, NULL, _IONBF, 0);
+setvbuf(stderr, NULL, _IONBF, 0);
+setup_signals();
+alarm(TIMEOUT_SECS);
+init_ctx();
+atexit(cleanup_ctx);
+banner();
+printf("[info] win() is at %p\n", (void *)win);
+printf("[info] main() is at %p\n", (void *)main);
+int ret;
+while ((ret = vuln()) == 0);
+if (ret < 0) { puts("[-] Challenge failed."); return 1; }
+puts("[+] Canary intact after overflow — challenge complete.");
+puts("[+] Well done. Now redirect execution to win().");
+return 0;
+}
