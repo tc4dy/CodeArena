@@ -2,7 +2,7 @@
 
 ## English
 
-**Code Arena** is a professional cybersecurity toolbox designed for CTF players, red teamers, and security researchers.
+**Code Arena** is a cybersecurity toolbox designed for BEGGINER CTF players, red teamers, and security researchers.(For begginers, hobby project.)
 
 It contains **mini codes, exploits, payloads, and utilities** that are:
 - Time-saving
