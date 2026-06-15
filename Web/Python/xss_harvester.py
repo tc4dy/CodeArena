@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import sys, threading, time, json, socket, urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from concurrent.futures import ThreadPoolExecutor
